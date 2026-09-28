@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field, ConfigDict
 import models
 from database import engine
+from router import auth
 
 app = FastAPI(
     title="Personal Expense Tracker API",
-    description="A simple API to track personal expenses",
-    version="1.0.0",
+    description="A simple API to track personal expenses"
 )
 
 class Transaction(BaseModel):
@@ -36,6 +36,7 @@ class TransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 models.Base.metadata.create_all(bind=engine)
+app.include_router(auth.router)
 
 @app.get("/")
 def root():
