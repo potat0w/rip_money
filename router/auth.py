@@ -8,8 +8,8 @@ from database import SessionLocal
 from models import User
 from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jose import jwt, JWTError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +17,7 @@ load_dotenv()
 router = APIRouter(prefix='/auth')
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+OAuth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = 'HS256'
@@ -48,6 +49,22 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
+def get_current_user(token: Annotated[str, Depends(OAuth2_bearer)], db: db_dependency):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get('sub')
+        user_id: int = payload.get('id')
+        if username is None or user_id is None:
+            raise HTTPException(status_code=404, detail='User not found')
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail='User not found')
+        return user
+    except:
+        raise HTTPException(status_code=404, detail='User not found')
+
+user_dependency = Annotated[User, Depends(get_current_user)]
 
 @router.post('/register')
 def register_user(db : db_dependency, new_user : CreateUser):
