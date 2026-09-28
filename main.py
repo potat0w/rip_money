@@ -52,6 +52,35 @@ def read_transactions(user: user_dependency, db : db_dependency):
 
     return db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).all()
 
+@app.get('/transactions/filter', response_model=list[TransactionResponse])
+def filter_transactions(
+    user: user_dependency,
+    db : db_dependency,
+    type : Optional[Literal["income", "expense"]] = None,
+    category : Optional[str] = None,
+    minimum_amount : Optional[float] = None,
+    maximum_amount : Optional[float] = None,
+):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail='Failed Authentication')
+
+    query = db.query(models.Transaction).filter(models.Transaction.owner_id == user.id)
+
+    if type is not None:
+        query = query.filter(models.Transaction.type == type)
+
+    if category is not None:
+        query = query.filter(models.Transaction.category == category)
+
+    if minimum_amount is not None:
+        query = query.filter(models.Transaction.amount >= minimum_amount)
+
+    if maximum_amount is not None:
+        query = query.filter(models.Transaction.amount <= maximum_amount)
+
+    return query.all()
+
 @app.get('/transactions/{transaction_id}', response_model=TransactionResponse)
 def read_specific_transaction(user: user_dependency, db : db_dependency, transaction_id : int):
 
