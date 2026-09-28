@@ -43,6 +43,14 @@ app.include_router(auth.router)
 def root():
     return {"message": "Personal Expense Tracker API is running"}
 
+@app.get('/transactions', response_model=list[TransactionResponse])
+def read_transactions(user: user_dependency, db : db_dependency):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail='Failed Authentication')
+
+    return db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).all()
+
 @app.post('/transactions', response_model=TransactionResponse, status_code=201)
 def create_transaction(user: user_dependency, db : db_dependency, new_transaction : Transaction):
 
