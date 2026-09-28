@@ -51,6 +51,18 @@ def read_transactions(user: user_dependency, db : db_dependency):
 
     return db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).all()
 
+@app.get('/transactions/{transaction_id}', response_model=TransactionResponse)
+def read_specific_transaction(user: user_dependency, db : db_dependency, transaction_id : int):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail='Failed Authentication')
+
+    specific_transaction = db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).filter(models.Transaction.id == transaction_id).first()
+    if specific_transaction is not None:
+        return specific_transaction
+    else:
+        raise HTTPException(status_code=404, detail='Transaction not found')
+
 @app.post('/transactions', response_model=TransactionResponse, status_code=201)
 def create_transaction(user: user_dependency, db : db_dependency, new_transaction : Transaction):
 
