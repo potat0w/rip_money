@@ -1,6 +1,7 @@
 from datetime import date as Date
 from typing import Optional, Literal
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 import models
 from database import engine
@@ -95,3 +96,18 @@ def update_transaction(user: user_dependency, db : db_dependency, transaction_id
     db.refresh(transaction)
 
     return transaction
+
+@app.delete('/transactions/{transaction_id}')
+def delete_transaction(user: user_dependency, db : db_dependency, transaction_id : int):
+
+    if user is None:
+        raise HTTPException(status_code=401, detail='Failed Authentication')
+
+    transaction = db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).filter(models.Transaction.id == transaction_id).first()
+    if transaction is None:
+        raise HTTPException(status_code=404, detail='Transaction not found')
+
+    db.query(models.Transaction).filter(models.Transaction.owner_id == user.id).filter(models.Transaction.id == transaction_id).delete()
+
+    db.commit()
+    return JSONResponse(status_code=200, content={'message' : 'Transaction deleted successfully'})
