@@ -19,7 +19,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # Add your Supabase DATABASE_URL to .env
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
 
 API: http://127.0.0.1:8000/
